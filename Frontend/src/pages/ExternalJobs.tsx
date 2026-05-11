@@ -4,10 +4,10 @@ import { Calendar, ExternalLink, Search, Filter, X, ChevronDown, Briefcase, MapP
 import { getExternalJobs, getSavedJobs, saveJob, unsaveJob } from '../lib/api';
 import type { AggregatedJobList, ExternalJob, UserResponse, SavedJobResponse } from '../types/api';
 
-const SOURCE_BADGE: Record<string, { bg: string; text: string; dot: string }> = {
-  remotive:  { bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500'    },
-  arbeitnow: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
-  jobicy:    { bg: 'bg-purple-50',  text: 'text-purple-700',  dot: 'bg-purple-500'  },
+const SOURCE_BADGE: Record<string, { bg: string; text: string }> = {
+  remotive:  { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+  arbeitnow: { bg: 'bg-blue-50',    text: 'text-blue-600'    },
+  jobicy:    { bg: 'bg-purple-50',  text: 'text-purple-600'  },
 };
 
 function formatDate(value: string | null) {
@@ -19,7 +19,6 @@ function formatDate(value: string | null) {
 
 const SOURCES = ['remotive', 'arbeitnow', 'jobicy'];
 
-// ── Kategori broad dengan keyword matcher ────────────────────────────────
 type Category = { label: string; emoji: string; keywords: string[] };
 const CATEGORIES: Category[] = [
   { label: 'Engineering',    emoji: '💻', keywords: ['engineer', 'developer', 'backend', 'frontend', 'fullstack', 'full-stack', 'software', 'programming', 'web', 'react', 'node', 'python', 'java', 'golang', 'ruby', 'php', 'typescript'] },
@@ -51,25 +50,25 @@ type Props = {
 };
 
 export default function ExternalJobs({ user, token }: Props) {
-  // ── Remote state ──────────────────────────────────────────────
   const [data, setData] = useState<AggregatedJobList | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Filter state (client-side) ─────────────────────────────────
   const [keyword, setKeyword] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [hasSalary, setHasSalary] = useState(false);
-  const [sortBy, setSortBy] = useState<'date' | 'title'>('date');
   const [showFilters, setShowFilters] = useState(false);
   
-  // ── Saved jobs state ──────────────────────────────────────────
   const [savedJobs, setSavedJobs] = useState<SavedJobResponse[]>([]);
   const [savingAction, setSavingAction] = useState<string | null>(null);
 
-  // ── Load all data once ────────────────────────────────────────
+  // Pagination state
+  const pageSize = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const loadJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -115,7 +114,6 @@ export default function ExternalJobs({ user, token }: Props) {
     }
   };
 
-  // ── Derived: all unique tags from data ────────────────────────
   const allTags = useMemo(() => {
     if (!data) return [];
     const tagSet = new Set<string>();
@@ -123,58 +121,62 @@ export default function ExternalJobs({ user, token }: Props) {
     return [...tagSet].sort();
   }, [data]);
 
-  // ── Client-side filtering & sorting ──────────────────────────
   const filteredJobs = useMemo((): ExternalJob[] => {
     if (!data) return [];
     let jobs = [...data.jobs];
 
-    // keyword
     const kw = keyword.trim().toLowerCase();
     if (kw) {
       jobs = jobs.filter(j =>
         j.title.toLowerCase().includes(kw) ||
         j.company.toLowerCase().includes(kw) ||
-        j.location.toLowerCase().includes(kw) ||
         j.tags.some(t => t.toLowerCase().includes(kw))
       );
     }
 
-    // source
+    const loc = locationQuery.trim().toLowerCase();
+    if (loc) {
+      jobs = jobs.filter(j => j.location.toLowerCase().includes(loc));
+    }
+
     if (selectedSources.size > 0) {
       jobs = jobs.filter(j => selectedSources.has(j.source));
     }
 
-    // tags
     if (selectedTags.size > 0) {
       jobs = jobs.filter(j => [...selectedTags].every(t => j.tags.includes(t)));
     }
 
-    // category
     if (selectedCategory) {
       const cat = CATEGORIES.find(c => c.label === selectedCategory);
       if (cat) jobs = jobs.filter(j => jobMatchesCategory(j, cat));
     }
 
-    // salary
     if (hasSalary) {
       jobs = jobs.filter(j => !!j.salary);
     }
 
-    // sort
-    if (sortBy === 'date') {
-      jobs.sort((a, b) => {
-        const da = a.published_at ? new Date(a.published_at).getTime() : 0;
-        const db = b.published_at ? new Date(b.published_at).getTime() : 0;
-        return db - da;
-      });
-    } else {
-      jobs.sort((a, b) => a.title.localeCompare(b.title));
-    }
+    // Always sort by date for consistency with design (we don't show the sort dropdown anymore)
+    jobs.sort((a, b) => {
+      const da = a.published_at ? new Date(a.published_at).getTime() : 0;
+      const db = b.published_at ? new Date(b.published_at).getTime() : 0;
+      return db - da;
+    });
 
     return jobs;
-  }, [data, keyword, selectedSources, selectedTags, selectedCategory, hasSalary, sortBy]);
+  }, [data, keyword, locationQuery, selectedSources, selectedTags, selectedCategory, hasSalary]);
 
-  // Count per category for badge
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [keyword, locationQuery, selectedSources, selectedTags, selectedCategory, hasSalary]);
+
+  const paginatedJobs = useMemo(() => {
+    return filteredJobs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredJobs, currentPage]);
+
+  const totalPages = Math.ceil(filteredJobs.length / pageSize);
+
   const categoryCount = useMemo(() => {
     if (!data) return {};
     return Object.fromEntries(
@@ -182,20 +184,13 @@ export default function ExternalJobs({ user, token }: Props) {
     );
   }, [data]);
 
-  const activeFilterCount =
-    (selectedSources.size > 0 ? 1 : 0) +
-    (selectedTags.size > 0 ? 1 : 0) +
-    (selectedCategory ? 1 : 0) +
-    (hasSalary ? 1 : 0) +
-    (keyword.trim() ? 1 : 0);
+  const POPULAR_SEARCHES = ['Front-end', 'Back-end', 'Development', 'PHP', 'Laravel', 'Bootstrap', 'Developer', 'Team Lead', 'Product Testing', 'Javascript'];
 
   const clearFilters = () => {
-    setKeyword('');
     setSelectedSources(new Set());
     setSelectedTags(new Set());
     setSelectedCategory(null);
     setHasSalary(false);
-    setSortBy('date');
   };
 
   const toggleSource = (src: string) => {
@@ -214,96 +209,83 @@ export default function ExternalJobs({ user, token }: Props) {
     });
   };
 
-  // ── Render ────────────────────────────────────────────────────
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">External Remote Jobs</h1>
-          <p className="mt-1 text-slate-500 text-sm">
-            Data langsung dari Remotive, Arbeitnow &amp; Jobicy: difilter secara real-time di browser.
-          </p>
-        </div>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {/* Top bar: search + sort + toggle */}
-        <div className="flex flex-wrap items-center gap-3 p-4">
-          {/* Search */}
-          <label className="relative flex-1 min-w-[200px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+    <div className="space-y-8">
+      {/* Search and Filter Section */}
+      <div className="space-y-4">
+        {/* Search Bar Card */}
+        <div className="flex flex-col md:flex-row items-center gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+          {/* Keyword Input */}
+          <label className="relative flex-1 w-full md:w-auto flex items-center border-b md:border-b-0 md:border-r border-slate-200 pb-3 md:pb-0 md:pr-4">
+            <Search className="h-5 w-5 text-slate-400 absolute left-3" />
             <input
               value={keyword}
               onChange={e => setKeyword(e.target.value)}
               type="text"
-              placeholder="Cari judul, perusahaan, lokasi, atau tag…"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+              placeholder="Search by: Job title, Position, Keyword..."
+              className="w-full bg-transparent py-2 pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
             />
           </label>
 
-          {/* Sort */}
-          <div className="relative">
-            <select
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value as 'date' | 'title')}
-              className="appearance-none rounded-lg border border-slate-200 bg-slate-50 py-2 pl-3 pr-8 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition cursor-pointer"
-            >
-              <option value="date">Terbaru</option>
-              <option value="title">A–Z Judul</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-          </div>
+          {/* Location Input */}
+          <label className="relative flex-1 w-full md:w-auto flex items-center border-b md:border-b-0 border-slate-200 pb-3 md:pb-0">
+            <MapPin className="h-5 w-5 text-slate-400 absolute left-3" />
+            <input
+              value={locationQuery}
+              onChange={e => setLocationQuery(e.target.value)}
+              type="text"
+              placeholder="City, state or zip code"
+              className="w-full bg-transparent py-2 pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+            />
+            <svg className="h-5 w-5 text-slate-400 absolute right-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </label>
 
-          {/* Salary toggle */}
-          <button
-            type="button"
-            onClick={() => setHasSalary(v => !v)}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-              hasSalary
-                ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-            }`}
-          >
-            💰 Ada Salary
-          </button>
-
-          {/* Advanced filter toggle */}
-          <button
-            type="button"
-            onClick={() => setShowFilters(v => !v)}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-              showFilters || (selectedSources.size > 0 || selectedTags.size > 0)
-                ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-            }`}
-          >
-            <Filter className="h-3.5 w-3.5" />
-            Filter
-            {(selectedSources.size + selectedTags.size) > 0 && (
-              <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white font-bold">
-                {selectedSources.size + selectedTags.size}
-              </span>
-            )}
-          </button>
-
-          {/* Clear all */}
-          {activeFilterCount > 0 && (
+          {/* Actions */}
+          <div className="flex w-full md:w-auto items-center gap-3">
             <button
               type="button"
-              onClick={clearFilters}
-              className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-700 transition-colors"
+              onClick={() => setShowFilters(v => !v)}
+              className={`flex flex-1 md:flex-none items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${showFilters ? 'bg-slate-200 text-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
             >
-              <X className="h-3.5 w-3.5" /> Reset
+              <Filter className="h-4 w-4" />
+              Filters
             </button>
-          )}
+            <button
+              type="button"
+              className="flex flex-1 md:flex-none items-center justify-center rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              Find Job
+            </button>
+          </div>
         </div>
 
-        {/* Expanded filters */}
+        {/* Popular Searches */}
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-slate-500 mr-1">Popular searches:</span>
+          {POPULAR_SEARCHES.map(term => {
+            const isActive = keyword.toLowerCase() === term.toLowerCase();
+            return (
+              <button
+                key={term}
+                onClick={() => setKeyword(isActive ? '' : term)}
+                className={`rounded-full px-3 py-1 font-medium transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                }`}
+              >
+                {term}
+              </button>
+            );
+          })}
+        </div>
+        
+        {/* Expanded Filters */}
         {showFilters && (
-          <div className="border-t border-slate-100 px-4 pb-4 pt-3 space-y-4">
-
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
             {/* Category chips */}
             <div>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -320,15 +302,15 @@ export default function ExternalJobs({ user, token }: Props) {
                       onClick={() => setSelectedCategory(active ? null : cat.label)}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
                         active
-                          ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
+                          ? 'border-blue-400 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-300 hover:text-blue-600'
                       }`}
                     >
                       <span>{cat.emoji}</span>
                       {cat.label}
                       {count > 0 && (
                         <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                          active ? 'bg-indigo-200 text-indigo-800' : 'bg-slate-200 text-slate-600'
+                          active ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-600'
                         }`}>
                           {count}
                         </span>
@@ -339,58 +321,62 @@ export default function ExternalJobs({ user, token }: Props) {
               </div>
             </div>
 
-            {/* Source chips */}
-            <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <Briefcase className="h-3.5 w-3.5" /> Source
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SOURCES.map(src => {
-                  const badge = SOURCE_BADGE[src] ?? { bg: 'bg-slate-50', text: 'text-slate-700', dot: 'bg-slate-400' };
-                  const active = selectedSources.has(src);
-                  return (
-                    <button
-                      key={src}
-                      type="button"
-                      onClick={() => toggleSource(src)}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-all ${
-                        active
-                          ? `${badge.bg} ${badge.text} border-current`
-                          : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
-                      }`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${active ? badge.dot : 'bg-slate-300'}`} />
-                      {src}
-                    </button>
-                  );
-                })}
+            <div className="flex flex-wrap gap-6">
+              {/* Source chips */}
+              <div>
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <Briefcase className="h-3.5 w-3.5" /> Source
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {SOURCES.map(src => {
+                    const badge = SOURCE_BADGE[src] ?? { bg: 'bg-slate-50', text: 'text-slate-600' };
+                    const active = selectedSources.has(src);
+                    return (
+                      <button
+                        key={src}
+                        type="button"
+                        onClick={() => toggleSource(src)}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-all ${
+                          active
+                            ? `border-blue-300 bg-blue-50 text-blue-700`
+                            : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'
+                        }`}
+                      >
+                        {src}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Salary Toggle */}
+              <div>
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Gaji
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setHasSalary(v => !v)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    hasSalary
+                      ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  💰 Ada Salary
+                </button>
               </div>
             </div>
 
-            {/* Tag chips */}
-            {allTags.length > 0 && (
-              <div>
-                <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <Tag className="h-3.5 w-3.5" /> Kategori / Tag
-                </p>
-                <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
-                  {allTags.map(tag => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag)}
-                      className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all ${
-                        selectedTags.has(tag)
-                          ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                          : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:text-slate-700'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-700 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" /> Reset Filter
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -403,45 +389,58 @@ export default function ExternalJobs({ user, token }: Props) {
       {/* Results */}
       <section>
         {loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-4 space-y-3">
-                <div className="h-3 w-16 rounded bg-slate-200" />
-                <div className="h-4 w-3/4 rounded bg-slate-200" />
-                <div className="h-3 w-1/2 rounded bg-slate-200" />
-                <div className="flex gap-2 mt-2">
-                  <div className="h-5 w-12 rounded-full bg-slate-200" />
-                  <div className="h-5 w-14 rounded-full bg-slate-200" />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+                <div className="h-5 w-3/4 rounded bg-slate-200" />
+                <div className="flex gap-2">
+                  <div className="h-4 w-16 rounded bg-slate-200" />
+                  <div className="h-4 w-24 rounded bg-slate-200" />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <div className="h-10 w-10 rounded-lg bg-slate-200 shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-1/2 rounded bg-slate-200" />
+                    <div className="h-3 w-1/3 rounded bg-slate-200" />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <>
-            <p className="mb-3 text-sm text-slate-500">
-              Menampilkan{' '}
-              <span className="font-semibold text-slate-900">{filteredJobs.length}</span>
-              {data && filteredJobs.length !== data.total && (
-                <> dari <span className="font-semibold text-slate-900">{data.total}</span></>
-              )}{' '}
-              jobs
-              {activeFilterCount > 0 && (
-                <span className="ml-1 text-indigo-600">({activeFilterCount} filter aktif)</span>
-              )}
-            </p>
-
             {filteredJobs.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredJobs.map(job => {
-                  const badge = SOURCE_BADGE[job.source] ?? { bg: 'bg-slate-50', text: 'text-slate-700', dot: 'bg-slate-400' };
-                  return (
-                    <article
-                      key={job.id}
-                      className="group flex flex-col rounded-xl border border-slate-200 bg-white p-4 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
-                    >
-                      {/* Source + Date */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-3">
+              <>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {paginatedJobs.map(job => {
+                    const badge = SOURCE_BADGE[job.source] ?? { bg: 'bg-slate-50', text: 'text-slate-600' };
+                    return (
+                      <article
+                        key={job.id}
+                        className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-6 hover:shadow-md transition-all duration-200"
+                      >
+                        <div>
+                          {/* Top: Title */}
+                          <Link to={`/remote-jobs/${job.id}`} className="block mb-3 pr-8">
+                            <h2 className="text-lg font-bold text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">
+                              {job.title}
+                            </h2>
+                          </Link>
+
+                          {/* Middle: Pill & Salary */}
+                          <div className="flex flex-wrap items-center gap-3 mb-8">
+                            <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${badge.bg} ${badge.text}`}>
+                              {job.source}
+                            </span>
+                            <span className="text-xs font-medium text-slate-500">
+                              Salary: {job.salary || 'Not specified'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Bottom: Logo, Company, Location, Bookmark */}
+                        <div className="flex items-center gap-4 mt-auto">
+                          {/* Logo */}
                           {job.company_logo ? (
                             <img src={job.company_logo} alt={job.company} className="h-10 w-10 shrink-0 rounded-lg border border-slate-100 object-cover bg-white" />
                           ) : (
@@ -449,103 +448,85 @@ export default function ExternalJobs({ user, token }: Props) {
                               {job.company.substring(0, 2)}
                             </div>
                           )}
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${badge.bg} ${badge.text}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
-                            {job.source}
-                          </span>
-                        </div>
-                        {formatDate(job.published_at) && (
-                          <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(job.published_at)}
-                          </span>
-                        )}
-                      </div>
+                          
+                          {/* Company Info */}
+                          <div className="flex flex-col overflow-hidden">
+                            <p className="text-sm font-bold text-slate-800 truncate">{job.company}</p>
+                            <p className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{job.location}</span>
+                            </p>
+                          </div>
 
-                      {/* Title */}
-                      <h2 className="text-sm font-semibold text-slate-900 leading-snug line-clamp-2 group-hover:text-indigo-700 transition-colors">
-                        {job.title}
-                      </h2>
-
-                      {/* Company + Location */}
-                      <div className="mt-1.5 space-y-0.5">
-                        <p className="text-xs text-slate-600 font-medium truncate">{job.company}</p>
-                        <p className="flex items-center gap-1 text-xs text-slate-400">
-                          <MapPin className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{job.location}</span>
-                        </p>
-                      </div>
-
-                      {/* Salary */}
-                      {job.salary && (
-                        <p className="mt-2 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5 w-fit">
-                          💰 {job.salary}
-                        </p>
-                      )}
-
-                      {/* Tags */}
-                      {job.tags.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {job.tags.slice(0, 3).map(tag => (
-                            <button
-                              key={tag}
-                              type="button"
-                              onClick={() => { toggleTag(tag); setShowFilters(true); }}
-                              className="rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-0.5 text-[11px] text-slate-500 transition-colors"
-                            >
-                              {tag}
-                            </button>
-                          ))}
-                          {job.tags.length > 3 && (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-400">
-                              +{job.tags.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="mt-auto pt-4 flex items-center gap-3 border-t border-slate-100">
-                        <Link
-                          to={`/remote-jobs/${job.id}`}
-                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
-                        >
-                          Detail →
-                        </Link>
-                        
-                        <div className="ml-auto flex items-center gap-2">
-                          {user?.role === 'jobseeker' && (
+                          {/* Bookmark Button */}
+                          <div className="ml-auto">
                             <button
                               onClick={(e) => handleToggleSave(e, job)}
                               disabled={savingAction === job.id}
-                              className={`p-1.5 rounded-lg transition-colors border ${
-                                savedJobs.some(sj => sj.external_job_id === job.id)
-                                  ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
-                                  : 'bg-white border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200'
-                              } disabled:opacity-50`}
+                              className="p-1.5 text-slate-300 hover:text-blue-600 transition-colors disabled:opacity-50"
                               title={savedJobs.some(sj => sj.external_job_id === job.id) ? "Hapus dari tersimpan" : "Simpan Job"}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={savedJobs.some(sj => sj.external_job_id === job.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={savedJobs.some(sj => sj.external_job_id === job.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={savedJobs.some(sj => sj.external_job_id === job.id) ? "text-blue-600" : ""}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
                             </button>
-                          )}
-                          <a
-                            href={job.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
-                          >
-                            Apply <ExternalLink className="h-3 w-3" />
-                          </a>
+                          </div>
                         </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-10 mb-4 flex justify-center items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-blue-500 hover:bg-blue-50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                      </svg>
+                    </button>
+                    
+                    {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                      let pageNum = currentPage;
+                      if (currentPage <= 3) pageNum = i + 1;
+                      else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                      else pageNum = currentPage - 2 + i;
+
+                      if (pageNum < 1 || pageNum > totalPages) return null;
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+                          }`}
+                        >
+                          {pageNum.toString().padStart(2, '0')}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="rounded-xl border border-slate-200 bg-white p-12 text-center">
                 <p className="text-slate-400 text-sm">Tidak ada job yang cocok dengan filter.</p>
-                <button onClick={clearFilters} className="mt-3 text-sm text-indigo-600 hover:underline">
+                <button onClick={clearFilters} className="mt-3 text-sm text-blue-600 hover:underline">
                   Reset filter
                 </button>
               </div>
