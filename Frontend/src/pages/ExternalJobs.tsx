@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, X, Briefcase, MapPin, Tag } from 'lucide-react';
 import { getExternalJobs, getSavedJobs, saveJob, unsaveJob } from '../lib/api';
 import type { AggregatedJobList, ExternalJob, UserResponse, SavedJobResponse } from '../types/api';
+import Swal from 'sweetalert2';
 
 const SOURCE_BADGE: Record<string, { bg: string; text: string }> = {
   remotive:  { bg: 'bg-emerald-50', text: 'text-emerald-600' },
@@ -87,7 +88,11 @@ export default function ExternalJobs({ user, token }: Props) {
   const handleToggleSave = async (e: React.MouseEvent, job: ExternalJob) => {
     e.preventDefault();
     if (!user || user.role !== 'jobseeker' || !token) {
-      alert("Silakan login sebagai Jobseeker untuk menyimpan lowongan.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Perhatian',
+        text: 'Silakan login sebagai Jobseeker untuk menyimpan lowongan.'
+      });
       return;
     }
 
@@ -102,7 +107,11 @@ export default function ExternalJobs({ user, token }: Props) {
         setSavedJobs(prev => [...prev, newSaved]);
       }
     } catch (err: any) {
-      alert(err.message || 'Gagal menyimpan job');
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: err.message || 'Gagal menyimpan job'
+      });
     } finally {
       setSavingAction(null);
     }

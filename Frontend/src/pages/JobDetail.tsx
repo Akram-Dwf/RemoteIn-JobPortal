@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Bookmark, Send, Briefcase, MapPin, Building, Calendar, X } from 'lucide-react';
 import { getJob, applyForJob, saveJob } from '../lib/api';
 import type { JobResponse, UserResponse } from '../types/api';
+import Swal from 'sweetalert2';
 
 type JobDetailProps = {
   user: UserResponse | null;
@@ -93,7 +94,11 @@ export default function JobDetail({ user }: JobDetailProps) {
       setSaveSuccess('Job saved!');
       setTimeout(() => setSaveSuccess(''), 3000);
     } catch (err: any) {
-      alert(err.message || 'Failed to save job. It might already be saved.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: err.message || 'Failed to save job. It might already be saved.'
+      });
     } finally {
       setIsSaving(false);
     }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Bookmark, MapPin, Building, Calendar, Trash2, ExternalLink } from 'lucide-react';
 import { getSavedJobs, getJob, getExternalJobByDbId, unsaveJob } from '../lib/api';
 import type { UserResponse, SavedJobResponse } from '../types/api';
+import Swal from 'sweetalert2';
 
 type SavedJobWithDetails = SavedJobResponse & {
   title?: string;
@@ -72,7 +73,11 @@ export default function SavedJobs({ token }: { user: UserResponse; token: string
       await unsaveJob(token, id);
       setSavedJobs(prev => prev.filter(job => job.id !== id));
     } catch (err: any) {
-      alert(err.message || 'Failed to remove saved job');
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: err.message || 'Failed to remove saved job'
+      });
     }
   };
 
