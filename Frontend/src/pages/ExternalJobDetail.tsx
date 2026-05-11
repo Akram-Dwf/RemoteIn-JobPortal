@@ -102,9 +102,16 @@ export default function ExternalJobDetail() {
         <section className="space-y-8">
           <div>
             <h2 className="text-xl font-bold text-slate-900 mb-4 font-heading">About this External Job</h2>
-            <p className="text-slate-600 leading-relaxed max-w-3xl">
-              This job was automatically synced from <strong>{job.source}</strong>. Because it is an aggregated remote job listing, the full lengthy description is not stored in our local database. Please click the <strong>"Apply for this Job"</strong> button above to view the complete job requirements, benefits, and submit your application at the original platform.
-            </p>
+            {job.description ? (
+              <div 
+                className="prose prose-slate max-w-none text-slate-600 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: job.description }} 
+              />
+            ) : (
+              <p className="text-slate-600 leading-relaxed max-w-3xl">
+                This job was automatically synced from <strong>{job.source}</strong>. Because it is an aggregated remote job listing, the full lengthy description is not stored in our local database. Please click the <strong>"Apply for this Job"</strong> button above to view the complete job requirements, benefits, and submit your application at the original platform.
+              </p>
+            )}
           </div>
 
           {job.tags && job.tags.length > 0 && (

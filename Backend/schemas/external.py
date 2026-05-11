@@ -12,6 +12,7 @@ class ExternalJob(BaseModel):
     title: str                       # Judul posisi
     company: str                     # Nama perusahaan
     company_logo: Optional[str] = None # Logo URL perusahaan
+    description: Optional[str] = None    # Deskripsi pekerjaan (HTML)
     location: str                    # Lokasi / "Worldwide" / "Remote"
     tags: List[str] = []             # Tag / kategori / skill
     salary: Optional[str] = None     # Range gaji jika tersedia

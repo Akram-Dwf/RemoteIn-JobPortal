@@ -35,6 +35,7 @@ def map_external_job(record: ExternalJobRecord) -> ExternalJob:
         title=record.title,
         company=record.company,
         company_logo=record.company_logo,
+        description=record.description,
         location=record.location,
         tags=record.tags or [],
         salary=record.salary,
@@ -117,6 +118,7 @@ async def run_external_sync(sync_request_id: int) -> None:
             existing.title = external_job.title
             existing.company = external_job.company
             existing.company_logo = external_job.company_logo
+            existing.description = external_job.description
             existing.location = external_job.location
             existing.tags = external_job.tags
             existing.salary = external_job.salary

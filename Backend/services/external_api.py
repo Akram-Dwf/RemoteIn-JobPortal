@@ -35,6 +35,7 @@ async def fetch_remotive(category: Optional[str] = None, limit: int = 20) -> Lis
                 title=item.get("title", ""),
                 company=item.get("company_name", ""),
                 company_logo=item.get("company_logo_url") or None,
+                description=item.get("description", ""),
                 location=item.get("candidate_required_location") or "Worldwide",
                 tags=item.get("tags", []),
                 salary=item.get("salary") or None,
@@ -71,6 +72,7 @@ async def fetch_arbeitnow(limit: int = 20) -> List[ExternalJob]:
                         title=item.get("title", ""),
                         company=item.get("company_name", ""),
                         company_logo=None,
+                        description=item.get("description", ""),
                         location=item.get("location") or "Remote",
                         tags=item.get("tags", []),
                         salary=None,  # Arbeitnow tidak expose salary di API publik
@@ -133,6 +135,7 @@ async def fetch_jobicy(
                 title=item.get("jobTitle", ""),
                 company=item.get("companyName", ""),
                 company_logo=item.get("companyLogo") or None,
+                description=item.get("jobDescription", ""),
                 location=item.get("jobGeo") or "Worldwide",
                 tags=item.get("jobType", []) if isinstance(item.get("jobType"), list) else [],
                 salary=salary,

@@ -57,6 +57,7 @@ export interface ExternalJob {
   title: string;
   company: string;
   company_logo?: string | null;
+  description?: string | null;
   location: string;
   tags: string[];
   salary: string | null;
