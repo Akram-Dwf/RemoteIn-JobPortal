@@ -34,6 +34,7 @@ def map_external_job(record: ExternalJobRecord) -> ExternalJob:
         id=f"{record.source}_{record.source_job_id}",
         title=record.title,
         company=record.company,
+        company_logo=record.company_logo,
         location=record.location,
         tags=record.tags or [],
         salary=record.salary,
@@ -63,12 +64,31 @@ async def run_external_sync(sync_request_id: int) -> None:
         sync_request.message = "Sinkronisasi sedang berjalan"
         db.commit()
 
-        remotive_jobs, arbeitnow_jobs, jobicy_jobs = await asyncio.gather(
+        # Extend fetches to use available API filters to get a broader and more categorized set of jobs.
+        tasks = [
             fetch_remotive(limit=SYNC_LIMIT_REMOTIVE),
             fetch_arbeitnow(limit=SYNC_LIMIT_ARBEITNOW),
             fetch_jobicy(count=SYNC_LIMIT_JOBICY),
-        )
-        fetched_jobs = remotive_jobs + arbeitnow_jobs + jobicy_jobs
+        ]
+        
+        # Remotive Categories
+        remotive_categories = ["software-dev", "data", "design", "marketing"]
+        for cat in remotive_categories:
+            tasks.append(fetch_remotive(category=cat, limit=SYNC_LIMIT_REMOTIVE))
+            
+        # Jobicy Industries & Geos
+        jobicy_industries = ["engineering", "marketing", "data"]
+        jobicy_geos = ["usa", "europe", "apac"]
+        for ind in jobicy_industries:
+            tasks.append(fetch_jobicy(industry=ind, count=SYNC_LIMIT_JOBICY))
+        for geo in jobicy_geos:
+            tasks.append(fetch_jobicy(geo=geo, count=SYNC_LIMIT_JOBICY))
+
+        results = await asyncio.gather(*tasks)
+        
+        fetched_jobs = []
+        for res in results:
+            fetched_jobs.extend(res)
         seen_pairs = set()
         synced_at = datetime.utcnow()
         record_cache = {}
@@ -96,6 +116,7 @@ async def run_external_sync(sync_request_id: int) -> None:
 
             existing.title = external_job.title
             existing.company = external_job.company
+            existing.company_logo = external_job.company_logo
             existing.location = external_job.location
             existing.tags = external_job.tags
             existing.salary = external_job.salary

@@ -22,6 +22,7 @@ class ExternalJob(Base):
     source_job_id = Column(String(255), nullable=False)
     title = Column(String(255), nullable=False)
     company = Column(String(255), nullable=False)
+    company_logo = Column(String(1000), nullable=True)
     location = Column(String(255), nullable=False)
     tags = Column(JSON, default=list, nullable=False)
     salary = Column(String(255), nullable=True)

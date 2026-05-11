@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, ExternalLink, Search, Filter, X, ChevronDown, Briefcase, MapPin, Tag } from 'lucide-react';
-import { getExternalJobs } from '../lib/api';
-import type { AggregatedJobList, ExternalJob } from '../types/api';
+import { getExternalJobs, getSavedJobs, saveJob, unsaveJob } from '../lib/api';
+import type { AggregatedJobList, ExternalJob, UserResponse, SavedJobResponse } from '../types/api';
 
 const SOURCE_BADGE: Record<string, { bg: string; text: string; dot: string }> = {
   remotive:  { bg: 'bg-blue-50',    text: 'text-blue-700',    dot: 'bg-blue-500'    },
@@ -45,7 +45,12 @@ function jobMatchesCategory(job: ExternalJob, cat: Category): boolean {
   return cat.keywords.some(kw => haystack.includes(kw.toLowerCase()));
 }
 
-export default function ExternalJobs() {
+type Props = {
+  user?: UserResponse | null;
+  token?: string | null;
+};
+
+export default function ExternalJobs({ user, token }: Props) {
   // ── Remote state ──────────────────────────────────────────────
   const [data, setData] = useState<AggregatedJobList | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +64,10 @@ export default function ExternalJobs() {
   const [hasSalary, setHasSalary] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'title'>('date');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // ── Saved jobs state ──────────────────────────────────────────
+  const [savedJobs, setSavedJobs] = useState<SavedJobResponse[]>([]);
+  const [savingAction, setSavingAction] = useState<string | null>(null);
 
   // ── Load all data once ────────────────────────────────────────
   const loadJobs = useCallback(async () => {
@@ -75,6 +84,36 @@ export default function ExternalJobs() {
   }, []);
 
   useEffect(() => { void loadJobs(); }, [loadJobs]);
+
+  useEffect(() => {
+    if (user?.role === 'jobseeker' && token) {
+      getSavedJobs(token).then(setSavedJobs).catch(console.error);
+    }
+  }, [user, token]);
+
+  const handleToggleSave = async (e: React.MouseEvent, job: ExternalJob) => {
+    e.preventDefault();
+    if (!user || user.role !== 'jobseeker' || !token) {
+      alert("Silakan login sebagai Jobseeker untuk menyimpan lowongan.");
+      return;
+    }
+
+    const saved = savedJobs.find(sj => sj.external_job_id === job.id);
+    setSavingAction(job.id);
+    try {
+      if (saved) {
+        await unsaveJob(token, saved.id);
+        setSavedJobs(prev => prev.filter(sj => sj.id !== saved.id));
+      } else {
+        const newSaved = await saveJob(token, { external_job_id: job.id });
+        setSavedJobs(prev => [...prev, newSaved]);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan job');
+    } finally {
+      setSavingAction(null);
+    }
+  };
 
   // ── Derived: all unique tags from data ────────────────────────
   const allTags = useMemo(() => {
@@ -402,10 +441,19 @@ export default function ExternalJobs() {
                     >
                       {/* Source + Date */}
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${badge.bg} ${badge.text}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
-                          {job.source}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          {job.company_logo ? (
+                            <img src={job.company_logo} alt={job.company} className="h-10 w-10 shrink-0 rounded-lg border border-slate-100 object-cover bg-white" />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-sm font-bold uppercase text-slate-400">
+                              {job.company.substring(0, 2)}
+                            </div>
+                          )}
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${badge.bg} ${badge.text}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
+                            {job.source}
+                          </span>
+                        </div>
                         {formatDate(job.published_at) && (
                           <span className="flex items-center gap-1 text-[11px] text-slate-400">
                             <Calendar className="h-3 w-3" />
@@ -464,14 +512,31 @@ export default function ExternalJobs() {
                         >
                           Detail →
                         </Link>
-                        <a
-                          href={job.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="ml-auto inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
-                        >
-                          Apply <ExternalLink className="h-3 w-3" />
-                        </a>
+                        
+                        <div className="ml-auto flex items-center gap-2">
+                          {user?.role === 'jobseeker' && (
+                            <button
+                              onClick={(e) => handleToggleSave(e, job)}
+                              disabled={savingAction === job.id}
+                              className={`p-1.5 rounded-lg transition-colors border ${
+                                savedJobs.some(sj => sj.external_job_id === job.id)
+                                  ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100'
+                                  : 'bg-white border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200'
+                              } disabled:opacity-50`}
+                              title={savedJobs.some(sj => sj.external_job_id === job.id) ? "Hapus dari tersimpan" : "Simpan Job"}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={savedJobs.some(sj => sj.external_job_id === job.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                            </button>
+                          )}
+                          <a
+                            href={job.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
+                          >
+                            Apply <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
                       </div>
                     </article>
                   );

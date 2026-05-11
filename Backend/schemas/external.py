@@ -11,6 +11,7 @@ class ExternalJob(BaseModel):
     id: str                          # ID unik: "{source}_{id_asli}"
     title: str                       # Judul posisi
     company: str                     # Nama perusahaan
+    company_logo: Optional[str] = None # Logo URL perusahaan
     location: str                    # Lokasi / "Worldwide" / "Remote"
     tags: List[str] = []             # Tag / kategori / skill
     salary: Optional[str] = None     # Range gaji jika tersedia

@@ -41,7 +41,7 @@ export default function ExternalJobDetail() {
         <p className="text-red-700">{error ?? 'External Job tidak ditemukan.'}</p>
         <Link to="/remote-jobs" className="text-sm font-semibold text-primary hover:text-primary-hover">
           Kembali ke daftar external jobs
-   q     </Link>
+        </Link>
       </div>
     );
   }
@@ -56,9 +56,13 @@ export default function ExternalJobDetail() {
       <div className="rounded-2xl border border-slate-200 bg-white p-8">
         <header className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="flex gap-6">
-            <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-slate-400 shrink-0">
-               <Briefcase className="w-8 h-8" />
-            </div>
+            {job.company_logo ? (
+              <img src={job.company_logo} alt={job.company} className="h-16 w-16 shrink-0 rounded-xl border border-slate-100 object-cover bg-white" />
+            ) : (
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50 text-xl font-bold uppercase text-slate-400">
+                {job.company.substring(0, 2)}
+              </div>
+            )}
             <div>
               <p className="text-sm font-semibold text-slate-500 mb-1">{job.company}</p>
               <h1 className="text-3xl font-bold text-slate-900 mb-4">{job.title}</h1>
