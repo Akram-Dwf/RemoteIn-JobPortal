@@ -1,250 +1,220 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Briefcase, PenTool, Code, Megaphone, Monitor, Building2, ArrowRight } from 'lucide-react';
-import { getExternalJobs, getJobs } from '../lib/api';
-import type { ExternalJob, JobResponse, UserResponse } from '../types/api';
-import BA from"../assets/BA.png"
+import { Search, MapPin, Briefcase, PenTool, Code, Megaphone, Bookmark, ArrowRight } from 'lucide-react';
+import { getJobs } from '../lib/api';
+import type { JobResponse, UserResponse } from '../types/api';
 
 type HomeProps = {
- user: UserResponse | null;
+  user: UserResponse | null;
 };
 
 function renderSalary(job: JobResponse) {
- if (job.salary_min === null && job.salary_max === null) {
- return 'Negotiable';
- }
+  if (job.salary_min === null && job.salary_max === null) {
+    return 'Negotiable';
+  }
 
- if (job.salary_min !== null && job.salary_max !== null) {
- return `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`;
- }
+  if (job.salary_min !== null && job.salary_max !== null) {
+    return `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`;
+  }
 
- return `$${(job.salary_min ?? job.salary_max ?? 0).toLocaleString()}`;
+  return `$${(job.salary_min ?? job.salary_max ?? 0).toLocaleString()}`;
 }
 
-const CATEGORIES = [
- { name: 'Design', icon: PenTool, count: 235 },
- { name: 'Sales', icon: Megaphone, count: 756 },
- { name: 'Marketing', icon: Megaphone, count: 140 },
- { name: 'Finance', icon: Briefcase, count: 325 },
- { name: 'Technology', icon: Monitor, count: 436 },
- { name: 'Engineering', icon: Code, count: 542 },
- { name: 'Business', icon: Building2, count: 211 },
- { name: 'Human Resource', icon: Briefcase, count: 346 },
-];
-
 export default function Home(_props: HomeProps) {
- const [jobs, setJobs] = useState<JobResponse[]>([]);
- const [externalJobs, setExternalJobs] = useState<ExternalJob[]>([]);
- const [loading, setLoading] = useState(true);
- const [error, setError] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<JobResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
- useEffect(() => {
- const loadData = async () => {
- try {
- const [internal, external] = await Promise.all([getJobs(), getExternalJobs({ limit: 4 })]);
- setJobs(internal);
- setExternalJobs(external.jobs);
- } catch (loadError) {
- setError(loadError instanceof Error ? loadError.message : 'Gagal memuat data dashboard.');
- } finally {
- setLoading(false);
- }
- };
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const internal = await getJobs();
+        setJobs(internal);
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : 'Gagal memuat data dashboard.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
- void loadData();
- }, []);
+    void loadData();
+  }, []);
 
- return (
- <div className="space-y-20 pb-16">
- {/* Hero Section */}
- <section className="pt-8">
- <div className="grid lg:grid-cols-2 gap-12 items-center">
- <div>
- <h1 className="text-[3.5rem] leading-[1.1] font-bold text-slate-900 mb-6 font-heading tracking-tight">
- Discover more than <br />
- <span className="text-primary">5000+ Jobs</span>
- </h1>
- <p className="text-lg text-slate-600 mb-10 max-w-lg">
- Great platform for the job seeker that is passionate about startups. Find your dream job easier.
- </p>
+  return (
+    <div className="relative overflow-hidden bg-white">
+      {/* Background Radial Gradient */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
- {/* Search Bar Container */}
- <div className="bg-white p-3 rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 flex flex-col sm:flex-row items-center gap-3">
- <div className="flex-1 flex items-center gap-3 w-full border-b sm:border-b-0 sm:border-r border-slate-200 px-3 py-2">
- <Search className="w-5 h-5 text-slate-400" />
- <input
- type="text"
- placeholder="Job title or keyword"
- className="w-full focus:outline-none text-slate-800 placeholder-slate-400 bg-transparent"
- />
- </div>
- <div className="flex-1 flex items-center gap-3 w-full px-3 py-2">
- <MapPin className="w-5 h-5 text-slate-400" />
- <input
- type="text"
- placeholder="Florence, Italy"
- className="w-full focus:outline-none text-slate-800 placeholder-slate-400 bg-transparent"
- />
- </div>
- <button className="bg-primary hover:bg-primary-hover text-white font-medium px-8 py-3 rounded w-full sm:w-auto transition-colors">
- Search my job
- </button>
- </div>
+      {/* Hero Section */}
+      <section className="pt-28 pb-20 px-4 text-center">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-[3.5rem] md:text-[4.5rem] font-extrabold text-[#111827] mb-6 tracking-tight leading-[1.1]">
+            Find Your Dream <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Remote Job</span> Today
+          </h1>
+          <p className="text-lg md:text-[1.15rem] text-slate-500 mb-12 max-w-2xl mx-auto leading-relaxed">
+            The #1 platform for premium remote-first career opportunities. Discover roles that offer flexibility, competitive compensation, and world-class culture.
+          </p>
 
- <p className="mt-4 text-sm text-slate-500">
- Popular: <span className="font-medium text-slate-700">UI Designer, UX Researcher, Android, Admin</span>
- </p>
- </div>
- <div className="hidden lg:block relative">
- {/* Hero Image / Illustration Placeholder */}
- <div className="bg-primary-50 rounded-full w-[450px] h-[450px] mx-auto overflow-hidden border-8 border-white shadow-xl relative">
- <div className="absolute inset-0 flex flex-col items-center justify-center">
- <img
- src={BA}
- alt="Foto saya"
- className="w-full h-full object-cover"
- />
- </div>
- </div>
- </div>
- </div>
- </section>
+          {/* Search Bar Container */}
+          <div className="bg-white p-2.5 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-2 relative z-10">
+            <div className="flex-1 flex items-center gap-3 w-full px-5 py-2">
+              <Search className="w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Job title, keyword, or company"
+                className="w-full focus:outline-none text-slate-800 placeholder-slate-400 bg-transparent text-base"
+              />
+            </div>
+            <div className="w-[1px] h-8 bg-slate-200 hidden md:block"></div>
+            <div className="flex-1 flex items-center gap-3 w-full px-5 py-2">
+              <MapPin className="w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Anywhere"
+                className="w-full focus:outline-none text-slate-800 placeholder-slate-400 bg-transparent text-base"
+              />
+            </div>
+            <button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white font-bold px-10 py-4 rounded-full w-full md:w-auto transition-opacity whitespace-nowrap text-base">
+              Search Jobs
+            </button>
+          </div>
+        </div>
+      </section>
 
- {/* Explore By Category Section */}
- <section>
- <div className="flex justify-between items-end mb-10">
- <div>
- <h2 className="text-3xl font-bold text-slate-900 font-heading">Explore by <span className="text-primary">category</span></h2>
- </div>
- <Link to="/remote-jobs" className="text-primary font-medium flex items-center gap-2 hover:text-primary-hover group">
- Show all jobs
- <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
- </Link>
- </div>
+      {/* Trusted By Section */}
+      <section className="bg-slate-50 py-12 border-y border-slate-100">
+        <div className="max-w-screen-2xl mx-auto px-4 text-center">
+          <p className="text-xs font-bold tracking-[0.1em] text-slate-500 uppercase mb-8">Trusted by top remote companies worldwide</p>
+          <div className="flex flex-wrap justify-center items-center gap-10 md:gap-20 opacity-60 grayscale">
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-700">Google</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-700">Microsoft</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-700">Slack</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-700">Zoom</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-slate-700">Meta</span>
+          </div>
+        </div>
+      </section>
 
- <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
- {CATEGORIES.map((cat, i) => {
- const IconComponent = cat.icon;
- return (
- <Link key={i} to="/jobs" className="border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:border-primary-200 transition-all group bg-white">
- <div className="bg-slate-50 w-14 h-14 rounded flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white text-primary transition-colors">
- <IconComponent className="w-7 h-7" />
- </div>
- <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">{cat.name}</h3>
- <p className="text-slate-500 mt-2 flex items-center gap-2">
- <span>{cat.count} jobs available</span>
- <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
- </p>
- </Link>
- )
- })}
- </div>
- </section>
+      {/* Explore By Category Section */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="flex justify-between items-center mb-10">
+          <h2 className="text-3xl font-bold text-[#111827] tracking-tight">Explore by Category</h2>
+          <Link to="/jobs" className="text-indigo-600 font-bold flex items-center gap-1.5 hover:text-indigo-700 text-sm">
+            View All <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
 
- {error && <div className="rounded border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { name: 'Engineering', icon: Code, count: '1,210', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            { name: 'Design', icon: PenTool, count: '842', color: 'text-purple-600', bg: 'bg-purple-50' },
+            { name: 'Marketing', icon: Megaphone, count: '650', color: 'text-orange-500', bg: 'bg-orange-50' },
+            { name: 'Sales', icon: Briefcase, count: '420', color: 'text-emerald-500', bg: 'bg-emerald-50' },
+          ].map((cat, i) => {
+            const IconComponent = cat.icon;
+            return (
+              <Link 
+                key={i} 
+                to="/jobs" 
+                className="group flex flex-col p-6 bg-white border border-slate-100 rounded-2xl hover:shadow-lg transition-shadow duration-300"
+              >
+                <div className={`w-12 h-12 rounded-xl ${cat.bg} ${cat.color} flex items-center justify-center mb-6`}>
+                  <IconComponent className="w-5 h-5" />
+                </div>
+                <h3 className="text-lg font-bold text-[#111827] mb-1">{cat.name}</h3>
+                <p className="text-sm text-slate-500">{cat.count} open roles</p>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
- {/* Featured Jobs Section */}
- <section>
- <div className="flex justify-between items-end mb-10">
- <h2 className="text-3xl font-bold text-slate-900 font-heading">Featured <span className="text-primary">jobs</span></h2>
- <Link to="/jobs" className="text-primary font-medium flex items-center gap-2 hover:text-primary-hover group">
- Show all jobs
- <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
- </Link>
- </div>
+      {/* Latest Opportunities Section */}
+      <section className="bg-[#f8f9ff] py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="text-3xl font-bold text-[#111827] tracking-tight">Latest Remote Opportunities</h2>
+            <Link to="/jobs" className="hidden sm:flex items-center gap-1.5 text-indigo-600 font-bold hover:text-indigo-700 text-sm">
+              Browse All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
- {loading ? (
- <p className="text-slate-500">Memuat jobs...</p>
- ) : jobs.length === 0 ? (
- <p className="text-slate-500">Belum ada job aktif.</p>
- ) : (
- <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
- {jobs.slice(0, 6).map((job) => (
- <Link
- key={job.id}
- to={`/jobs/${job.id}`}
- className="border border-slate-200 bg-white rounded-xl p-6 transition-all hover:border-primary-200 hover:shadow-lg flex flex-col h-full group"
- >
- <div className="flex justify-between items-start mb-4">
- <div className="w-12 h-12 bg-slate-100 rounded flex items-center justify-center text-primary font-bold text-xl uppercase">
- {job.company.substring(0, 1)}
- </div>
- <span className="border border-primary-200 text-primary bg-primary-50 px-3 py-1 rounded-full text-xs font-semibold">
- Full-Time
- </span>
- </div>
- <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">{job.title}</h3>
- <p className="text-slate-500 text-sm mt-1 mb-2 flex items-center gap-1">
- {job.company} <span className="w-1 h-1 rounded-full bg-slate-400 mx-1"></span> {job.location}
- </p>
- <p className="text-slate-900 font-medium text-sm mb-4">
- {renderSalary(job)}
- </p>
- <p className="text-slate-600 text-sm line-clamp-2 flex-grow mb-6">{job.description}</p>
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+          )}
 
- <div className="flex items-center gap-2 flex-wrap">
- <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-medium">Design</span>
- <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-medium">Business</span>
- </div>
- </Link>
- ))}
- </div>
- )}
- </section>
+          {loading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="h-[320px] rounded-2xl bg-white border border-slate-100 animate-pulse"></div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {jobs.slice(0, 3).map((job) => (
+                <article
+                  key={job.id}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col h-full hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-extrabold text-lg uppercase">
+                      {job.company.substring(0, 1)}
+                    </div>
+                    <button className="text-slate-400 hover:text-indigo-600 transition-colors">
+                      <Bookmark className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <h3 className="text-[1.15rem] font-bold text-[#111827] mb-1 leading-snug">
+                    <Link to={`/jobs/${job.id}`} className="hover:text-indigo-600 transition-colors">{job.title}</Link>
+                  </h3>
+                  <p className="text-slate-500 text-sm mb-4">
+                    {job.company} • {job.location}
+                  </p>
+                  
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="inline-flex items-center rounded bg-indigo-50 px-2 py-1 text-xs font-bold text-indigo-700">
+                      Full Time
+                    </span>
+                    <span className="inline-flex items-center rounded bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
+                      {renderSalary(job)}
+                    </span>
+                  </div>
 
- {/* Latest External Jobs Section */}
- <section className="bg-slate-50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-16 mt-16 border-t border-slate-200">
- <div className="max-w-6xl mx-auto">
- <div className="flex justify-between items-end mb-10">
- <h2 className="text-3xl font-bold text-slate-900 font-heading">Latest <span className="text-primary">jobs open</span></h2>
- <Link to="/remote-jobs" className="text-primary font-medium flex items-center gap-2 hover:text-primary-hover group">
- Show all jobs
- <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
- </Link>
- </div>
+                  <p className="text-sm text-slate-500 mb-6 line-clamp-2 leading-relaxed">
+                    {job.description || "We are looking for an experienced professional to join our team and lead development efforts."}
+                  </p>
 
- {loading ? (
- <p className="text-slate-500">Memuat jobs external...</p>
- ) : externalJobs.length === 0 ? (
- <p className="text-slate-500">Data external belum tersedia.</p>
- ) : (
- <div className="grid gap-4 bg-white/50 p-2 rounded-xl">
- {externalJobs.map((job) => (
- <Link
- key={job.id}
- to={`/remote-jobs/${job.id}`}
- className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition hover:border-primary-200 hover:shadow-md group"
- >
- <div className="flex items-center gap-4">
- <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
- <Briefcase className="w-6 h-6" />
- </div>
- <div>
- <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">{job.title}</h3>
- <p className="text-slate-500 text-sm flex items-center gap-2">
- <span>{job.company}</span>
- <span className="w-1 h-1 rounded-full bg-slate-400"></span>
- <span>{job.location}</span>
- </p>
- </div>
- </div>
- <div className="flex items-center gap-4">
- <div className="hidden md:flex gap-2">
- <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-semibold uppercase">{job.source}</span>
- </div>
- <span className="font-semibold text-slate-900 hidden sm:block">
- {job.salary ?? 'Commensurate'}
- </span>
- <button className="bg-primary text-white px-6 py-2 rounded font-medium opacity-0 group-hover:opacity-100 transition-opacity">
- Apply
- </button>
- </div>
- </Link>
- ))}
- </div>
- )}
- </div>
- </section>
- </div>
- );
+                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Posted 2 hours ago</span>
+                    <Link to={`/jobs/${job.id}`} className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
+                      Apply Now
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="max-w-6xl mx-auto px-4 py-20 pb-28">
+        <div className="bg-gradient-to-r from-[#5a3ae4] to-[#8d2de2] rounded-[1.5rem] p-10 md:p-14 relative overflow-hidden shadow-xl shadow-purple-500/10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="relative z-10 max-w-xl text-center md:text-left">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3 tracking-tight leading-snug">Want to hire top remote talent?</h2>
+            <p className="text-base md:text-lg text-white/90 font-medium leading-relaxed">
+              Join hundreds of innovative companies building their distributed teams through RemoteIn's premium talent network.
+            </p>
+          </div>
+          <div className="relative z-10 shrink-0">
+            <Link to="/register" className="inline-flex items-center justify-center bg-white text-indigo-600 font-bold px-8 py-3.5 rounded-xl hover:bg-slate-50 transition-colors shadow-sm whitespace-nowrap">
+              Post a Job Now
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

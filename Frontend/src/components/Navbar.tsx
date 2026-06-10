@@ -9,11 +9,11 @@ type NavbarProps = {
 };
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
- `px-3.5 py-1.5 rounded-xl text-sm font-bold transition-all duration-300 ${
- isActive 
- ? 'text-indigo-650 bg-indigo-50 border border-indigo-100 shadow-sm shadow-indigo-100/10' 
- : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50 border border-transparent'
- }`;
+  `relative text-sm font-semibold transition-colors duration-300 py-1 ${
+  isActive 
+  ? 'text-primary after:content-[""] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary' 
+  : 'text-slate-500 hover:text-primary'
+  }`;
 
 export default function Navbar({ user, onLogout }: NavbarProps) {
  const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -36,18 +36,19 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
  return (
  <header className="fixed inset-x-0 top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-slate-200/50 shadow-sm transition-all duration-300">
- <div className="mx-auto flex h-[76px] w-full max-w-screen-2xl items-center justify-between px-4 sm:px-8">
- <div className="flex items-center gap-8">
- <Link to="/" className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2 group">
- <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-base font-extrabold shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300">
- R
- </div>
- <span>
- Remote<span className="text-indigo-600 group-hover:text-indigo-500 transition-colors duration-300">In</span>
- </span>
- </Link>
- 
- <nav className="hidden items-center gap-2 sm:flex mt-0.5">
+      <div className="mx-auto flex h-[76px] w-full max-w-[1536px] items-center justify-between px-6 lg:px-16 relative">
+        {/* Logo (Left) */}
+        <Link to="/" className="text-[1.35rem] font-extrabold tracking-tight flex items-center gap-2.5 group z-10">
+          <div className="w-[38px] h-[38px] rounded-xl bg-gradient-to-br from-[#5a3ae4] to-[#8d2de2] flex items-center justify-center text-white text-xl font-bold shadow-sm shadow-purple-500/20">
+            R
+          </div>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5a3ae4] to-[#8d2de2]">
+            RemoteIn
+          </span>
+        </Link>
+        
+        {/* Navigation (Center) */}
+        <nav className="hidden sm:flex items-center gap-8 absolute left-1/2 -translate-x-1/2 h-full">
  <NavLink to="/" end className={navLinkClass}>
  Home
  </NavLink>
@@ -68,9 +69,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
  </NavLink>
  )}
  </nav>
- </div>
 
- <div className="flex items-center gap-3">
+ <div className="flex items-center gap-3 z-10">
  {user ? (
  <div className="relative" ref={dropdownRef}>
  <button 
@@ -144,12 +144,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
  </div>
  ) : (
  <>
- <Link to="/login" className="px-4 py-2 text-sm font-bold text-slate-500 transition-colors hover:text-indigo-600">
- Log in
- </Link>
- <Link to="/register" className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-100 hover:shadow-lg hover:shadow-indigo-200 hover:scale-[1.02] active:scale-95 transition-all focus:ring-2 focus:ring-indigo-500/50">
- Sign up
- </Link>
+            <Link to="/login" className="px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:text-indigo-600">
+              Log in
+            </Link>
+            <Link to="/register" className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-500 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 hover:scale-105 transition-transform">
+              Sign up
+            </Link>
  </>
  )}
  </div>

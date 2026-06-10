@@ -256,3 +256,22 @@ export async function getAdminStats(token: string): Promise<AdminStatsResponse> 
 export async function getAdminRecentUsers(token: string, limit: number = 50): Promise<UserResponse[]> {
   return request<UserResponse[]>(`/admin/users?limit=${limit}`, {}, token);
 }
+
+export async function deleteAdminUser(token: string, userId: number): Promise<{ message: string }> {
+  return request<{ message: string }>(`/admin/users/${userId}`, {
+    method: 'DELETE',
+  }, token);
+}
+
+export async function deleteAdminJob(token: string, jobId: number): Promise<{ message: string }> {
+  return request<{ message: string }>(`/admin/jobs/${jobId}`, {
+    method: 'DELETE',
+  }, token);
+}
+
+export async function updateAdminJobStatus(token: string, jobId: number, payload: { is_active: boolean }): Promise<JobResponse> {
+  return request<JobResponse>(`/admin/jobs/${jobId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  }, token);
+}
