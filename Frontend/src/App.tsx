@@ -95,8 +95,8 @@ function AppLayout({ user, token, sessionLoading, handleLoggedIn, handleLogout }
             <Route path="/jobs/:jobId" element={<JobDetail user={user} />} />
             <Route path="/remote-jobs" element={<ExternalJobs user={user} token={token} />} />
             <Route path="/remote-jobs/:jobId" element={<ExternalJobDetail />} />
-            <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login onLoggedIn={handleLoggedIn} />} />
-            <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
+            <Route path="/login" element={user ? <Navigate to={user.role === 'admin' ? '/admin/dashboard' : user.role === 'employer' ? '/dashboard' : '/'} replace /> : <Login onLoggedIn={handleLoggedIn} />} />
+            <Route path="/register" element={user ? <Navigate to={user.role === 'admin' ? '/admin/dashboard' : user.role === 'employer' ? '/dashboard' : '/'} replace /> : <Register />} />
             <Route path="/profile" element={user && user.role === 'jobseeker' ? <Profile user={user} token={token} /> : <Navigate to="/login" replace />} />
             <Route path="/applications" element={user && user.role === 'jobseeker' ? <MyApplications user={user} token={token} /> : <Navigate to="/login" replace />} />
             <Route path="/saved-jobs" element={user && user.role === 'jobseeker' ? <SavedJobs user={user} token={token} /> : <Navigate to="/login" replace />} />
@@ -140,6 +140,7 @@ export default function App() {
     try {
       const profile = await getMe(nextToken);
       setUser(profile);
+      return profile;
     } catch (error) {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       setToken(null);

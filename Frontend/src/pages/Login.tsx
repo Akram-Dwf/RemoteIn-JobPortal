@@ -3,9 +3,10 @@ import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { login } from '../lib/api';
+import type { UserResponse } from '../types/api';
 
 type LoginProps = {
- onLoggedIn: (token: string) => Promise<void>;
+  onLoggedIn: (token: string) => Promise<UserResponse>;
 };
 
 type LoginLocationState = {
@@ -28,8 +29,15 @@ export default function Login({ onLoggedIn }: LoginProps) {
 
  try {
  const token = await login({ email, password });
- await onLoggedIn(token.access_token);
- navigate('/dashboard', { replace: true });
+ const profile = await onLoggedIn(token.access_token);
+      
+ if (profile.role === 'admin') {
+   navigate('/admin/dashboard', { replace: true });
+ } else if (profile.role === 'employer') {
+   navigate('/dashboard', { replace: true });
+ } else {
+   navigate('/', { replace: true });
+ }
  } catch (loginError) {
  setError(loginError instanceof Error ? loginError.message : 'Login gagal. Coba lagi.');
  } finally {

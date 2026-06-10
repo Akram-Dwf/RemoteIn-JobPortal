@@ -144,12 +144,26 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
  </div>
  ) : (
  <>
-            <Link to="/login" className="px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:text-indigo-600">
-              Log in
-            </Link>
-            <Link to="/register" className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-500 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 hover:scale-105 transition-transform">
-              Sign up
-            </Link>
+            <div className="relative flex items-center bg-slate-50/80 p-1 rounded-full border border-slate-200/60 shadow-sm backdrop-blur-sm">
+              <div 
+                className={`absolute top-1 bottom-1 w-[80px] rounded-full bg-gradient-to-r from-indigo-600 to-purple-500 shadow-md shadow-indigo-500/20 transition-all duration-300 ease-out`}
+                style={{
+                  transform: location.pathname === '/login' ? 'translateX(0)' : 'translateX(100%)',
+                }}
+              />
+              <Link 
+                to="/login" 
+                className={`relative z-10 w-[80px] text-center py-2 text-[13px] font-bold transition-colors duration-300 ${location.pathname === '/login' ? 'text-white' : 'text-slate-600 hover:text-indigo-600'}`}
+              >
+                Log in
+              </Link>
+              <Link 
+                to="/register" 
+                className={`relative z-10 w-[80px] text-center py-2 text-[13px] font-bold transition-colors duration-300 ${location.pathname !== '/login' ? 'text-white' : 'text-slate-600 hover:text-indigo-600'}`}
+              >
+                Sign up
+              </Link>
+            </div>
  </>
  )}
  </div>
