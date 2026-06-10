@@ -173,37 +173,38 @@ export default function Jobs({ user, token }: Props) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-6xl mx-auto px-4 py-12">
+      <div className="mb-10">
+        <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-3">Find your next great opportunity</h1>
+        <p className="text-slate-500 text-lg">Discover remote roles at top-tier companies tailored to your expertise.</p>
+      </div>
+
       {/* Search and Filter Section */}
       <div className="space-y-4">
         {/* Search Bar Card */}
-        <div className="flex flex-col md:flex-row items-center gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
           {/* Keyword Input */}
-          <label className="relative flex-1 w-full md:w-auto flex items-center border-b md:border-b-0 md:border-r border-slate-200 pb-3 md:pb-0 md:pr-4">
+          <label className="relative flex-1 w-full md:w-auto flex items-center border-b md:border-b-0 md:border-r border-slate-200 pb-3 md:pb-0 md:pr-3">
             <Search className="h-5 w-5 text-slate-400 absolute left-3" />
             <input
               value={keyword}
               onChange={e => setKeyword(e.target.value)}
               type="text"
-              placeholder="Search by: Job title, Position, Keyword..."
-              className="w-full bg-transparent py-2 pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+              placeholder="Job title, keywords, or company"
+              className="w-full bg-slate-50/50 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-slate-50"
             />
           </label>
 
           {/* Location Input */}
-          <label className="relative flex-1 w-full md:w-auto flex items-center border-b md:border-b-0 border-slate-200 pb-3 md:pb-0">
+          <label className="relative flex-1 w-full md:w-auto flex items-center border-b md:border-b-0 border-slate-200 pb-3 md:pb-0 md:pr-3">
             <MapPin className="h-5 w-5 text-slate-400 absolute left-3" />
             <input
               value={locationQuery}
               onChange={e => setLocationQuery(e.target.value)}
               type="text"
-              placeholder="City, state or zip code"
-              className="w-full bg-transparent py-2 pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+              placeholder="City, country, or remote"
+              className="w-full bg-slate-50/50 rounded-xl py-3 pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-slate-50"
             />
-            <svg className="h-5 w-5 text-slate-400 absolute right-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
           </label>
 
           {/* Actions */}
@@ -211,14 +212,14 @@ export default function Jobs({ user, token }: Props) {
             <button
               type="button"
               onClick={() => setShowFilters(v => !v)}
-              className={`flex flex-1 md:flex-none items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${showFilters ? 'bg-slate-200 text-slate-900' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              className={`flex flex-1 md:flex-none items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors ${showFilters ? 'bg-primary-50 text-primary border border-primary-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-transparent'}`}
             >
               <Filter className="h-4 w-4" />
               Filters
             </button>
             <button
               type="button"
-              className="flex flex-1 md:flex-none items-center justify-center rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm"
+              className="flex flex-1 md:flex-none items-center justify-center rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-white hover:bg-primary-hover transition-colors"
             >
               Find Job
             </button>
@@ -226,17 +227,17 @@ export default function Jobs({ user, token }: Props) {
         </div>
 
         {/* Popular Searches */}
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-slate-500 mr-1">Popular searches:</span>
-          {POPULAR_SEARCHES.map(term => {
+        <div className="flex flex-wrap items-center gap-3 text-sm px-2">
+          <span className="text-slate-500">Popular searches:</span>
+          {['Front-end', 'Developer', 'Laravel', 'Product Manager'].map(term => {
             const isActive = keyword.toLowerCase() === term.toLowerCase();
             return (
               <button
                 key={term}
                 onClick={() => setKeyword(isActive ? '' : term)}
-                className={`rounded-full px-3 py-1 font-medium transition-colors ${isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                className={`rounded-full px-4 py-1.5 font-medium transition-colors border ${isActive
+                  ? 'bg-primary-50 text-primary border-primary-200'
+                  : 'text-primary bg-primary-50/50 border-transparent hover:bg-primary-50'
                   }`}
               >
                 {term}
@@ -247,67 +248,62 @@ export default function Jobs({ user, token }: Props) {
 
         {/* Expanded Filters */}
         {showFilters && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-            {/* Category chips */}
-            <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <Tag className="h-3.5 w-3.5" /> Kategori Pekerjaan
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map(cat => {
-                  const active = selectedCategory === cat.label;
-                  const count = (categoryCount as Record<string, number>)[cat.label] ?? 0;
-                  return (
-                    <button
-                      key={cat.label}
-                      type="button"
-                      onClick={() => setSelectedCategory(active ? null : cat.label)}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${active
-                        ? 'border-blue-400 bg-blue-50 text-blue-700'
-                        : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-300 hover:text-blue-600'
-                        }`}
-                    >
-                      <span>{cat.emoji}</span>
-                      {cat.label}
-                      {count > 0 && (
-                        <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${active ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-600'
-                          }`}>
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-6">
-              {/* Salary Toggle */}
-              <div>
-                <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Gaji
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setHasSalary(v => !v)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${hasSalary
-                    ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
-                    }`}
-                >
-                  💰 Ada Salary
-                </button>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-slate-900">Advanced Filters</h3>
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-slate-700 transition-colors"
+                className="text-sm font-medium text-primary hover:text-primary-hover transition-colors"
               >
-                <X className="h-3.5 w-3.5" /> Reset Filter
+                Reset Filter
               </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Category chips */}
+              <div>
+                <p className="mb-3 text-sm font-semibold text-slate-700">Category</p>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.slice(0, 5).map(cat => {
+                    const active = selectedCategory === cat.label;
+                    return (
+                      <button
+                        key={cat.label}
+                        type="button"
+                        onClick={() => setSelectedCategory(active ? null : cat.label)}
+                        className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-all ${active
+                          ? 'border-primary-200 bg-primary-50 text-primary'
+                          : 'border-slate-200 bg-slate-50/50 text-slate-700 hover:border-primary-200 hover:bg-slate-50'
+                          }`}
+                      >
+                        <span>{cat.emoji}</span>
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Salary Toggle */}
+              <div>
+                <p className="mb-3 text-sm font-semibold text-slate-700">Salary Preference</p>
+                <button
+                  type="button"
+                  onClick={() => setHasSalary(v => !v)}
+                  className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${hasSalary
+                    ? 'border-primary-200 bg-primary-50 text-primary'
+                    : 'border-slate-200 bg-slate-50/50 text-slate-700 hover:bg-slate-50'
+                    }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span>💰</span> Ada Salary (Transparent)
+                  </div>
+                  <div className={`w-10 h-6 rounded-full flex items-center px-1 transition-colors ${hasSalary ? 'bg-primary' : 'bg-slate-300'}`}>
+                    <div className={`w-4 h-4 rounded-full bg-white transition-transform ${hasSalary ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -317,6 +313,18 @@ export default function Jobs({ user, token }: Props) {
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
       )}
+
+      {/* Results Header */}
+      <div className="flex justify-between items-center mt-4">
+        <h2 className="text-2xl font-bold text-slate-900">{filteredJobs.length} Jobs Found</h2>
+        <div className="flex items-center gap-2 text-sm text-slate-500">
+          <span>Sort by:</span>
+          <select className="font-semibold text-slate-900 bg-transparent focus:outline-none cursor-pointer">
+            <option>Most Relevant</option>
+            <option>Newest</option>
+          </select>
+        </div>
+      </div>
 
       {/* Results */}
       <section>
@@ -347,53 +355,52 @@ export default function Jobs({ user, token }: Props) {
                   {paginatedJobs.map(job => (
                     <article
                       key={job.id}
-                      className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-6 hover:shadow-md transition-all duration-200"
+                      className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 hover:shadow-lg hover:border-primary-200 transition-all duration-300 relative"
                     >
+                      <div className="absolute top-6 right-6">
+                        <button
+                          onClick={(e) => handleToggleSave(e, job)}
+                          disabled={savingAction === job.id}
+                          className="text-slate-400 hover:text-primary transition-colors disabled:opacity-50"
+                          title={savedJobs.some(sj => sj.job_id === job.id) ? "Hapus dari tersimpan" : "Simpan Job"}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={savedJobs.some(sj => sj.job_id === job.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={savedJobs.some(sj => sj.job_id === job.id) ? "text-primary" : ""}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg>
+                        </button>
+                      </div>
+                      
                       <div>
-                        {/* Top: Title */}
-                        <Link to={`/jobs/${job.id}`} className="block mb-3 pr-8">
-                          <h2 className="text-lg font-bold text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">
-                            {job.title}
-                          </h2>
-                        </Link>
-
-                        {/* Middle: Pill & Salary */}
-                        <div className="flex flex-wrap items-center gap-3 mb-8">
-                          <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600`}>
+                        {/* Top: Pill */}
+                        <div className="mb-4">
+                          <span className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-primary-50 text-primary">
                             Internal
                           </span>
-                          <span className="text-xs font-medium text-slate-500">
-                            Salary: {formatSalary(job)}
-                          </span>
                         </div>
+                        
+                        {/* Title & Salary */}
+                        <Link to={`/jobs/${job.id}`} className="block mb-6 pr-8">
+                          <h2 className="text-xl font-bold text-slate-900 leading-snug mb-1 group-hover:text-primary transition-colors">
+                            {job.title}
+                          </h2>
+                          <p className="text-sm font-medium text-slate-500">
+                            {formatSalary(job)} / year
+                          </p>
+                        </Link>
                       </div>
 
-                      {/* Bottom: Logo, Company, Location, Bookmark */}
-                      <div className="flex items-center gap-4 mt-auto">
+                      {/* Bottom: Logo, Company, Location */}
+                      <div className="flex items-center gap-3 mt-auto pt-6">
                         {/* Logo */}
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold uppercase text-white shadow-sm">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold uppercase text-white shadow-sm">
                           {job.company.substring(0, 2)}
                         </div>
 
                         {/* Company Info */}
                         <div className="flex flex-col overflow-hidden">
-                          <p className="text-sm font-bold text-slate-800 truncate">{job.company}</p>
-                          <p className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
-                            <MapPin className="h-3 w-3 shrink-0" />
+                          <p className="text-sm font-bold text-slate-900 truncate">{job.company}</p>
+                          <p className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
+                            <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                             <span className="truncate">{job.location}</span>
                           </p>
-                        </div>
-
-                        {/* Bookmark Button */}
-                        <div className="ml-auto">
-                          <button
-                            onClick={(e) => handleToggleSave(e, job)}
-                            disabled={savingAction === job.id}
-                            className="p-1.5 text-slate-300 hover:text-blue-600 transition-colors disabled:opacity-50"
-                            title={savedJobs.some(sj => sj.job_id === job.id) ? "Hapus dari tersimpan" : "Simpan Job"}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={savedJobs.some(sj => sj.job_id === job.id) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={savedJobs.some(sj => sj.job_id === job.id) ? "text-blue-600" : ""}><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg>
-                          </button>
                         </div>
                       </div>
                     </article>
@@ -402,13 +409,13 @@ export default function Jobs({ user, token }: Props) {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="mt-10 mb-4 flex justify-center items-center gap-2">
+                  <div className="mt-12 mb-4 flex justify-center items-center gap-2">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-blue-500 hover:bg-blue-50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 disabled:hover:bg-transparent transition-all"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                       </svg>
                     </button>
@@ -425,22 +432,35 @@ export default function Jobs({ user, token }: Props) {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-colors ${currentPage === pageNum
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+                          className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold transition-all ${currentPage === pageNum
+                            ? 'bg-primary text-white shadow-md shadow-primary/20'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                             }`}
                         >
-                          {pageNum.toString().padStart(2, '0')}
+                          {pageNum}
                         </button>
                       );
                     })}
+                    
+                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                      <span className="flex h-10 w-10 items-center justify-center text-slate-400">...</span>
+                    )}
+
+                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all"
+                      >
+                        {totalPages}
+                      </button>
+                    )}
 
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50 transition-colors"
+                      className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 transition-all"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                       </svg>
                     </button>

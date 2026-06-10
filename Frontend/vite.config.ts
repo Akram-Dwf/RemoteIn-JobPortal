@@ -7,6 +7,9 @@ export default defineConfig({
   server: {
     host: true,   // ← Wajib agar bisa diakses dari luar container
     port: 5173,
+    watch: {
+      usePolling: true,
+    },
     proxy: {
       '/api': {
         // Pakai env var: saat Docker → http://backend:8000, lokal → http://127.0.0.1:8000
